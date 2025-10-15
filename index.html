@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dough‑Re‑Me Bakery</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#fffaf7;--card:#ffffff;--ink:#2b2b2b;--muted:#6b7280;--brand:#f59e0b;--brand-dark:#d97706;--accent:#ef4444;--ring:rgba(245,158,11,.35)
+    }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{margin:0;font-family:Poppins,system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,Helvetica,sans-serif;color:var(--ink);background:var(--bg)}
+    img{max-width:100%;display:block}
+    a{text-decoration:none;color:inherit}
+    .container{width:min(1100px,92vw);margin-inline:auto}
+    /* Header */
+    header{position:sticky;top:0;background:rgba(255,255,255,.8);backdrop-filter:saturate(180%) blur(12px);z-index:50;border-bottom:1px solid #0001}
+    .nav{display:flex;align-items:center;justify-content:space-between;padding:14px 0}
+    .brand{display:flex;gap:.6rem;align-items:center;font-weight:700;font-size:1.05rem}
+    .brand .logo{height:34px;width:34px;border-radius:10px;display:grid;place-items:center;color:#111;font-weight:800}
+    .links{display:flex;gap:1rem;align-items:center}
+    .links a{padding:.5rem .75rem;border-radius:10px;color:#374151;font-weight:600}
+    .links a:hover{background:#00000008}
+    .cart{position:relative}
+    .badge{position:absolute;top:-6px;right:-6px;background:var(--accent);color:#fff;border-radius:999px;font-size:.65rem;padding:.15rem .4rem;font-weight:700}
+    .menu-toggle{display:none;border:none;background:transparent;font-size:1.4rem}
+
+    /* Hero */
+    .hero{display:grid;grid-template-columns:1.2fr .8fr;gap:2rem;align-items:center;padding:60px 0}
+    .hero h1{font-size:clamp(1.8rem,4vw,3rem);line-height:1.1;margin:0 0 .6rem}
+    .hero p{color:var(--muted);margin:0 0 1.2rem}
+    .cta{display:flex;gap:.8rem;flex-wrap:wrap}
+    .btn{padding:.8rem 1rem;border-radius:12px;border:2px solid transparent;font-weight:700;cursor:pointer;transition:.2s}
+    .btn.primary{background:var(--brand);color:#111}
+    .btn.primary:hover{background:var(--brand-dark)}
+    .btn.ghost{background:transparent;border-color:#00000012}
+    .btn.ghost:hover{border-color:#00000025}
+    .hero-card{background:var(--card);border-radius:18px;box-shadow:0 10px 30px #00000010;overflow:hidden}
+    .hero-card img{aspect-ratio:4/3;object-fit:cover}
+    .hero-card .caption{padding:1rem}
+
+    /* Sections */
+    section{padding:48px 0}
+    .section-title{font-size:1.6rem;margin:0 0 .4rem}
+    .section-sub{color:var(--muted);margin:0 0 1.2rem}
+
+    /* Menu Grid */
+    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+    .card{background:var(--card);border-radius:16px;box-shadow:0 6px 20px #0000000d;overflow:hidden;border:1px solid #00000008}
+    .card img{aspect-ratio:4/3;object-fit:cover}
+    .card .body{padding:14px}
+    .price{font-weight:800}
+    .meta{display:flex;align-items:center;justify-content:space-between;color:var(--muted);font-size:.9rem;margin-top:.3rem}
+    .add{margin-top:.6rem;width:100%;padding:.65rem;border-radius:12px;border:none;background:#111;color:#fff;font-weight:700;cursor:pointer}
+    .add:focus{outline:3px solid var(--ring)}
+
+    /* About */
+    .about{display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:center}
+    .about .pill{display:inline-block;background:#111;color:#fff;border-radius:999px;padding:.35rem .7rem;font-size:.8rem;margin-bottom:.4rem}
+
+    /* Contact */
+    .contact{display:grid;grid-template-columns:1.1fr .9fr;gap:24px}
+    form{background:var(--card);padding:18px;border-radius:16px;box-shadow:0 6px 20px #0000000d;border:1px solid #0000000a}
+    label{display:block;font-weight:600;margin:.6rem 0 .2rem}
+    input,textarea{width:100%;padding:.75rem;border-radius:12px;border:1px solid #e5e7eb;background:#fff}
+    textarea{min-height:120px;resize:vertical}
+    .send{margin-top:10px}
+
+    /* Footer */
+    footer{padding:28px 0;border-top:1px solid #0000000f;color:#6b7280}
+
+    /* Responsive */
+    @media (max-width: 980px){
+      .hero{grid-template-columns:1fr;}
+      .about, .contact{grid-template-columns:1fr}
+      .grid{grid-template-columns:repeat(2,1fr)}
+    }
+    @media (max-width: 640px){
+      .grid{grid-template-columns:1fr}
+      .links{display:none}
+      .menu-toggle{display:block}
+      .mobile{display:none;position:absolute;top:60px;left:0;right:0;background:#fff;border-bottom:1px solid #00000012}
+      .mobile a{display:block;padding:12px 16px;border-top:1px solid #0000000a}
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container nav">
+      <a href="#home" class="brand" aria-label="Dough‑Re‑Me home">
+        <span class="logo">
+  <img src="static/images/logo.png" alt="Dough-Re-Me Logo" />
+</span>
+
+        <span>Dough‑Re‑Me Bakery</span>
+      </a>
+      <nav class="links" aria-label="Primary">
+        <a href="#menu">Menu</a>
+        <a href="#about">About</a>
+        <a href="#contact">Contact</a>
+      </nav>
+      <button class="menu-toggle" aria-label="Open menu" onclick="toggleMobile()">☰</button>
+      <a class="cart" href="#menu" aria-label="Cart">
+        🧺<span id="cartBadge" class="badge" aria-live="polite" aria-atomic="true">0</span>
+      </a>
+    </div>
+    <nav id="mobileNav" class="mobile container" aria-label="Mobile"></nav>
+  </header>
+
+  <main id="home">
+    <!-- HERO -->
+    <section class="hero container" aria-labelledby="hero-title">
+      <div>
+        <h1 id="hero-title">Freshly baked. AI‑recommended. Delivered with love.</h1>
+        <p>Discover cakes, loaves, and desserts curated by our smart recommender. Order in seconds via our friendly chatbot, or browse the menu below.</p>
+        <div class="cta">
+          <a href="#menu" class="btn primary">Explore Menu</a>
+          <a href="#about" class="btn ghost">How it works</a>
+        </div>
+      </div>
+      <div class="hero-card" role="img" aria-label="Display of assorted bakery items">
+        <img src="static/images/blueberry_crumble.jpeg" alt="Blueberry Crumble Cake"/>
+        <div class="caption">
+          <strong>Today’s picks</strong>
+          <p class="section-sub">Hand‑crafted classics and seasonal specials.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- MENU -->
+    <section id="menu" class="container" aria-labelledby="menu-title">
+      <h2 class="section-title" id="menu-title">Menu</h2>
+      <p class="section-sub">Add your favourites to the basket.</p>
+      <div class="grid" id="menuGrid"></div>
+    </section>
+
+    <!-- ABOUT -->
+    <section id="about" class="container" aria-labelledby="about-title">
+      <div class="about">
+        <div>
+          <span class="pill">About us</span>
+          <h2 class="section-title" id="about-title">Small batch. Big heart.</h2>
+          <p class="section-sub">We bake daily in micro‑batches with premium ingredients. Our smart kitchen forecasts demand to reduce waste and keep your favourites in stock.</p>
+          <ul>
+            <li>Custom cakes with dietary options</li>
+            <li>AI‑powered recommendations</li>
+            <li>Same‑day local delivery</li>
+          </ul>
+        </div>
+        <img src="https://images.unsplash.com/photo-1605497788044-5c4ae0500f86?q=80&w=1600&auto=format&fit=crop" alt="Chef icing a cake" style="border-radius:16px;box-shadow:0 10px 30px #00000010"/>
+      </div>
+    </section>
+
+    <!-- CONTACT -->
+    <section id="contact" class="container" aria-labelledby="contact-title">
+      <h2 class="section-title" id="contact-title">Contact & Pre‑orders</h2>
+      <div class="contact">
+        <form onsubmit="event.preventDefault(); alert('Thanks! We\'ll get back soon.'); this.reset();">
+          <label for="name">Name</label>
+          <input id="name" name="name" required placeholder="Your name" />
+          <label for="email">Email</label>
+          <input id="email" name="email" type="email" required placeholder="you@example.com" />
+          <label for="msg">Message</label>
+          <textarea id="msg" name="message" placeholder="Custom cake request, date & size..."></textarea>
+          <button class="btn primary send" type="submit">Send message</button>
+        </form>
+        <div>
+          <div class="hero-card">
+            <img src="https://images.unsplash.com/photo-1541976076758-347942db1970?q=80&w=1600&auto=format&fit=crop" alt="Bakery storefront"/>
+            <div class="caption">
+              <strong>Visit us</strong>
+              <p class="section-sub">Open daily 8am–8pm · Bengaluru</p>
+              <p>Email: hello@doughreme.in<br/>Phone: +91‑90000‑00000</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      © <span id="year"></span> Dough‑Re‑Me · Built with love and butter 🧈
+    </div>
+  </footer>
+
+  <script>
+
+ 
+    const items = [
+      {id:1, name:'Blueberry Crumble Cake', price:60, img:'static/images/blueberry_crumble.jpeg'},
+      {id:2, name:'Banana‑Walnut Loaf', price:300, img:'static/images/banana_walnut.jpeg'},
+      {id:3, name:'Classic Tiramisu', price:80, img:'static/images/tiramisu.jpeg'},
+      {id:4, name:'Mango Cheesecake', price:80, img:'static/images/mango_cheesecake.jpeg'},
+      {id:5, name:'Fudgy Brownie (Piece)', price:80, img:'static/images/brownie.jpeg'},
+      {id:6, name:'Caramel Custard (Cup)', price:70, img:'static/images/caramel_custard.jpeg'}
+    ];
+
+    const grid = document.getElementById('menuGrid');
+    const badge = document.getElementById('cartBadge');
+    const mobileNav = document.getElementById('mobileNav');
+    let cartCount = 0;
+
+    function renderMenu(){
+      grid.innerHTML = items.map(it => `
+        <article class="card" aria-label="${it.name}">
+          <img src="${it.img}" alt="${it.name}">
+          <div class="body">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:.6rem">
+              <h3 style="margin:0;font-size:1.05rem">${it.name}</h3>
+              <span class="price">₹${it.price}</span>
+            </div>
+            <div class="meta">
+              <span>Fresh • Eggless opt.</span>
+              <span>★ 4.8</span>
+            </div>
+            <button class="add" onclick="addToCart(${it.id})">Add to cart</button>
+          </div>
+        </article>
+      `).join('');
+    }
+
+    function addToCart(id){
+      cartCount++; badge.textContent = cartCount; badge.style.transform = 'scale(1.2)';
+      setTimeout(()=>{badge.style.transform='scale(1)';},120);
+    }
+
+    function toggleMobile(){
+      if(mobileNav.style.display === 'block'){ mobileNav.style.display = 'none'; return; }
+      mobileNav.innerHTML = `
+        <a href="#menu" onclick="toggleMobile()">Menu</a>
+        <a href="#about" onclick="toggleMobile()">About</a>
+        <a href="#contact" onclick="toggleMobile()">Contact</a>
+      `;
+      mobileNav.style.display = 'block';
+    }
+
+    document.getElementById('year').textContent = new Date().getFullYear();
+    renderMenu();
+  </script>
+</body>
+</html>
