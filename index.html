@@ -185,44 +185,57 @@
   </footer>
 
   <script>
-
- 
-    const items = [
-      {id:1, name:'Blueberry Crumble Cake', price:60, img:'static/images/blueberry_crumble.jpeg'},
-      {id:2, name:'Banana‑Walnut Loaf', price:300, img:'static/images/banana_walnut.jpeg'},
-      {id:3, name:'Classic Tiramisu', price:80, img:'static/images/tiramisu.jpeg'},
-      {id:4, name:'Mango Cheesecake', price:80, img:'static/images/mango_cheesecake.jpeg'},
-      {id:5, name:'Fudgy Brownie (Piece)', price:80, img:'static/images/brownie.jpeg'},
-      {id:6, name:'Caramel Custard (Cup)', price:70, img:'static/images/caramel_custard.jpeg'}
-    ];
-
+    const apiBase = '';
     const grid = document.getElementById('menuGrid');
     const badge = document.getElementById('cartBadge');
     const mobileNav = document.getElementById('mobileNav');
-    let cartCount = 0;
+    const cartKey = 'drm_cart_v1';
 
-    function renderMenu(){
+    async function fetchProducts(){
+      try{
+        const res = await fetch(apiBase + '/api/v1/products/');
+        if(!res.ok) throw new Error('Failed');
+        const data = await res.json();
+        return data;
+      }catch(e){
+        // fallback to empty
+        return [];
+      }
+    }
+
+    function loadCart(){
+      try{ return JSON.parse(localStorage.getItem(cartKey) || '[]') }catch(e){ return [] }
+    }
+
+    function saveCart(arr){ localStorage.setItem(cartKey, JSON.stringify(arr)); updateBadge(); }
+
+    function updateBadge(){ const c = loadCart().reduce((s,i)=>s+i.quantity,0); badge.textContent = c; }
+
+    function renderMenu(items){
       grid.innerHTML = items.map(it => `
         <article class="card" aria-label="${it.name}">
-          <img src="${it.img}" alt="${it.name}">
+          <img src="${it.img || 'static/images/shop.png'}" alt="${it.name}">
           <div class="body">
             <div style="display:flex;justify-content:space-between;align-items:center;gap:.6rem">
-              <h3 style="margin:0;font-size:1.05rem">${it.name}</h3>
+              <h3 style="margin:0;font-size:1.05rem"><a href="product.html?id=${it.id}">${it.name}</a></h3>
               <span class="price">₹${it.price}</span>
             </div>
             <div class="meta">
-              <span>Fresh • Eggless opt.</span>
+              <span>${it.category || 'Fresh'}</span>
               <span>★ 4.8</span>
             </div>
-            <button class="add" onclick="addToCart(${it.id})">Add to cart</button>
+            <button class="add" onclick="addToCart(${it.id}, '${(it.name||'').replace(/'/g,"\'\'")}','${it.price}', '${it.img || ''}')">Add to cart</button>
           </div>
         </article>
       `).join('');
     }
 
-    function addToCart(id){
-      cartCount++; badge.textContent = cartCount; badge.style.transform = 'scale(1.2)';
-      setTimeout(()=>{badge.style.transform='scale(1)';},120);
+    function addToCart(id, name, price, img){
+      const arr = loadCart();
+      const ex = arr.find(x=>x.id===id);
+      if(ex){ ex.quantity += 1 } else { arr.push({id, name, price: Number(price), quantity:1, img}) }
+      saveCart(arr);
+      badge.style.transform = 'scale(1.2)'; setTimeout(()=>badge.style.transform='scale(1)',120);
     }
 
     function toggleMobile(){
@@ -235,8 +248,68 @@
       mobileNav.style.display = 'block';
     }
 
-    document.getElementById('year').textContent = new Date().getFullYear();
-    renderMenu();
+    // Chat widget
+    const chatBtnHtml = `
+      <div id="drmChat" style="position:fixed;right:18px;bottom:18px;z-index:1000">
+        <button id="openChat" style="background:var(--brand);border:none;border-radius:999px;padding:12px 16px;color:#111;font-weight:700">Chat</button>
+      </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', chatBtnHtml);
+
+    function createChatPanel(){
+      if(document.getElementById('drmPanel')) return;
+      const panel = document.createElement('div');
+      panel.id = 'drmPanel';
+      panel.style.position = 'fixed';
+      panel.style.right = '18px';
+      panel.style.bottom = '72px';
+      panel.style.width = '320px';
+      panel.style.maxHeight = '60vh';
+      panel.style.background = '#fff';
+      panel.style.borderRadius = '12px';
+      panel.style.boxShadow = '0 10px 30px rgba(0,0,0,.15)';
+      panel.style.overflow = 'hidden';
+      panel.innerHTML = `
+        <div style="padding:10px;border-bottom:1px solid #eee;font-weight:700">Assistant</div>
+        <div id="drmMsgs" style="padding:10px;height:240px;overflow:auto"></div>
+        <div style="display:flex;gap:8px;padding:8px;border-top:1px solid #eee">
+          <input id="drmInput" placeholder="Ask for recommendations or say hi" style="flex:1;padding:8px;border-radius:8px;border:1px solid #eee">
+          <button id="drmSend" style="background:var(--brand);border:none;padding:8px 10px;border-radius:8px">Send</button>
+        </div>
+      `;
+      document.body.appendChild(panel);
+      document.getElementById('drmSend').addEventListener('click', sendChat);
+      document.getElementById('drmInput').addEventListener('keydown', (e)=>{ if(e.key==='Enter') sendChat() });
+    }
+
+    async function sendChat(){
+      const input = document.getElementById('drmInput');
+      const text = input.value.trim(); if(!text) return; input.value = '';
+      const msgsEl = document.getElementById('drmMsgs');
+      msgsEl.insertAdjacentHTML('beforeend', `<div style="margin:.4rem 0"><strong>You:</strong> ${text}</div>`);
+      msgsEl.scrollTop = msgsEl.scrollHeight;
+
+      const payload = { messages: [{ role: 'user', content: text }], top_n: 5 };
+      const res = await fetch('/api/v1/assistant/chat', { method: 'POST', headers: {'content-type':'application/json'}, body: JSON.stringify(payload) });
+      if(!res.ok){ msgsEl.insertAdjacentHTML('beforeend', `<div style="color:red">Assistant error</div>`); return }
+      const data = await res.json();
+      msgsEl.insertAdjacentHTML('beforeend', `<div style="margin:.4rem 0"><strong>Assistant:</strong> ${data.reply.text}</div>`);
+      if(data.reply.suggested_products && data.reply.suggested_products.length){
+        const list = data.reply.suggested_products.map(p=>`<div style="margin:.3rem 0"><a href="product.html?id=${p.id}">${p.name} — ₹${p.price}</a></div>`).join('');
+        msgsEl.insertAdjacentHTML('beforeend', `<div style="margin:.4rem 0">${list}</div>`);
+      }
+      msgsEl.scrollTop = msgsEl.scrollHeight;
+    }
+
+    document.getElementById('openChat').addEventListener('click', ()=>{ createChatPanel(); });
+
+    // Init
+    (async ()=>{
+      const items = await fetchProducts();
+      renderMenu(items);
+      updateBadge();
+      document.getElementById('year').textContent = new Date().getFullYear();
+    })();
   </script>
 </body>
 </html>
