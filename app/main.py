@@ -7,6 +7,7 @@ import os
 
 from app.core.config import settings
 from app.api.v1 import products, orders
+from app.api.v1 import assistant
 
 # Create FastAPI app
 app = FastAPI(
@@ -27,6 +28,7 @@ app.add_middleware(
 # Include API routers
 app.include_router(products.router, prefix="/api/v1/products", tags=["products"])
 app.include_router(orders.router, prefix="/api/v1/orders", tags=["orders"])
+app.include_router(assistant.router, prefix="/api/v1/assistant", tags=["assistant"])
 
 # Get the directory where this script is located
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -42,6 +44,20 @@ async def serve_index():
     """Serve the index.html file."""
     index_path = os.path.join(BASE_DIR, "index.html")
     return FileResponse(index_path)
+
+
+@app.get("/cart.html")
+async def serve_cart():
+    """Serve the cart.html file."""
+    cart_path = os.path.join(BASE_DIR, "cart.html")
+    return FileResponse(cart_path)
+
+
+@app.get("/product.html")
+async def serve_product():
+    """Serve the product.html file."""
+    product_path = os.path.join(BASE_DIR, "product.html")
+    return FileResponse(product_path)
 
 
 @app.get("/health")

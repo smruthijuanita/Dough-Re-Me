@@ -1,0 +1,41 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Product - Dough‑Re‑Me</title>
+  <style>body{font-family:Inter,system-ui,Arial;margin:20px}img{max-width:320px}</style>
+</head>
+<body>
+  <div id="product"></div>
+  <script>
+    const params = new URLSearchParams(location.search);
+    const id = params.get('id');
+    async function load(){
+      if(!id){ document.getElementById('product').textContent='No product id'; return }
+      const res = await fetch('/api/v1/products/'+id);
+      if(!res.ok){ document.getElementById('product').textContent='Not found'; return }
+      const p = await res.json();
+      document.getElementById('product').innerHTML = `
+        <h1>${p.name}</h1>
+        <img src="${p.img||'static/images/shop.png'}" alt="${p.name}">
+        <p>${p.description||''}</p>
+        <p><strong>₹${p.price}</strong></p>
+        <label>Quantity <input id="qty" type="number" value="1" min="1"></label>
+        <button id="add">Add to cart</button>
+      `;
+      document.getElementById('add').addEventListener('click', ()=>{
+        const qty = parseInt(document.getElementById('qty').value||1,10);
+        const key = 'drm_cart_v1';
+        const raw = localStorage.getItem(key)||'[]';
+        const arr = JSON.parse(raw);
+        const found = arr.find(x=>x.id===p.id);
+        if(found){ found.quantity += qty } else { arr.push({id:p.id,name:p.name,price:p.price,quantity:qty,img:p.img}) }
+        localStorage.setItem(key,JSON.stringify(arr));
+        alert('Added to cart');
+      });
+    }
+    load();
+  </script>
+</body>
+</html>

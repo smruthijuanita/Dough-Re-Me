@@ -1,0 +1,49 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Cart - Dough‑Re‑Me</title>
+  <style>body{font-family:Inter,system-ui,Arial;margin:20px}img{max-width:80px}</style>
+</head>
+<body>
+  <h1>Your Cart</h1>
+  <div id="cart"></div>
+  <hr>
+  <h2>Checkout</h2>
+  <form id="checkoutForm">
+    <label>Name<br><input name="name" required></label><br>
+    <label>Email<br><input name="email" type="email" required></label><br>
+    <label>Phone<br><input name="phone"></label><br>
+    <button type="submit">Place Order</button>
+  </form>
+  <script>
+    const cartKey = 'drm_cart_v1';
+    function loadCart(){
+      const raw = localStorage.getItem(cartKey) || '[]';
+      return JSON.parse(raw);
+    }
+    function render(){
+      const cart = loadCart();
+      const el = document.getElementById('cart');
+      if(cart.length===0){ el.innerHTML='<p>Your cart is empty.</p>'; return }
+      el.innerHTML = cart.map(i=>`<div><img src="${i.img||'static/images/shop.png'}" alt="${i.name}"> <strong>${i.name}</strong> — ₹${i.price} × ${i.quantity}</div>`).join('');
+    }
+    document.getElementById('checkoutForm').addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const form = new FormData(e.target);
+      const cart = loadCart();
+      if(cart.length===0){ alert('Cart empty'); return }
+      const payload = {
+        customer_name: form.get('name'),
+        customer_email: form.get('email'),
+        customer_phone: form.get('phone'),
+        items: cart.map(i=>({product_id:i.id,quantity:i.quantity}))
+      };
+      const res = await fetch('/api/v1/orders/', {method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)});
+      if(res.ok){ alert('Order placed'); localStorage.removeItem(cartKey); render(); } else { const txt = await res.text(); alert('Error: '+txt) }
+    });
+    render();
+  </script>
+</body>
+</html>
