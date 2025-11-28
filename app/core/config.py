@@ -1,5 +1,6 @@
 """Application configuration using Pydantic BaseSettings."""
-from pydantic import BaseSettings, PostgresDsn, validator
+from pydantic_settings import BaseSettings
+from pydantic import PostgresDsn, field_validator
 from typing import Optional
 
 
@@ -11,27 +12,24 @@ class Settings(BaseSettings):
     # Database - PostgreSQL
     postgres_server: str = "localhost"
     postgres_user: str = "postgres"
-    postgres_password: str = "postgres"
-    postgres_db: str = "dough_re_me"
+    postgres_password: str = "elvis"
+    postgres_db: str = "Doughreme"
     postgres_port: str = "5432"
-    database_url: Optional[PostgresDsn] = None
+    database_url: Optional[str] = None
     
-    @validator("database_url", pre=True)
-    def assemble_db_connection(cls, v: Optional[str], values: dict) -> str:
-        if isinstance(v, str):
-            return v
-        return PostgresDsn.build(
-            scheme="postgresql",
-            user=values.get("postgres_user"),
-            password=values.get("postgres_password"),
-            host=values.get("postgres_server"),
-            port=values.get("postgres_port"),
-            path=f"/{values.get('postgres_db') or ''}",
-        )
+    @property
+    def get_database_url(self) -> str:
+        if self.database_url:
+            return self.database_url
+        return f"postgresql://{self.postgres_user}:{self.postgres_password}@{self.postgres_server}:{self.postgres_port}/{self.postgres_db}"
 
-    class Config:
-        env_file = ".env"
-        case_sensitive = True
+    model_config = {
+        "env_file": ".env",
+        # Allow common uppercase env names (POSTGRES_PORT, APP_NAME, DEBUG)
+        "case_sensitive": False,
+        # Ignore extra env entries instead of forbidding them (avoids extra_forbidden)
+        "extra": "ignore",
+    }
 
 
 settings = Settings()
