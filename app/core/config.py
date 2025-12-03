@@ -17,6 +17,13 @@ class Settings(BaseSettings):
     postgres_port: str = "5432"
     database_url: Optional[str] = None
     
+    # SMTP Email Configuration
+    smtp_server: str = "smtp.gmail.com"
+    smtp_port: int = 587
+    smtp_username: str = ""
+    smtp_password: str = ""
+    sender_email: str = ""
+    
     @property
     def get_database_url(self) -> str:
         if self.database_url:
