@@ -60,6 +60,13 @@ async def serve_product():
     return FileResponse(product_path)
 
 
+@app.get("/orders.html")
+async def serve_orders():
+    """Serve the orders.html file."""
+    orders_path = os.path.join(BASE_DIR, "orders.html")
+    return FileResponse(orders_path)
+
+
 @app.get("/health")
 async def health_check():
     """Health check endpoint."""

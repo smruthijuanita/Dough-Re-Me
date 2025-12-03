@@ -66,13 +66,17 @@ def list_orders(
     skip: int = 0,
     limit: int = 100,
     status_filter: str = None,
+    customer_email: str = None,
     db: Session = Depends(get_db)
 ):
-    """Get list of orders with optional status filter."""
+    """Get list of orders with optional filters."""
     query = db.query(Order)
     
     if status_filter:
         query = query.filter(Order.status == status_filter)
+    
+    if customer_email:
+        query = query.filter(Order.customer_email == customer_email)
     
     orders = query.offset(skip).limit(limit).all()
     return orders
