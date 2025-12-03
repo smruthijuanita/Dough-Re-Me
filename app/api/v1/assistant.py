@@ -1,180 +1,197 @@
-"""Assistant API: simple intent detection and product recommendations."""
-from typing import List, Optional, Tuple
-from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
-import re
+"""Assistant API: Llama 3 powered intent detection and order processing."""
+from typing import List, Optional, Dict, Any
+from fastapi import APIRouter
+import os
+import json
+from app.core.config import settings
+from app.llm_client import llm
+from app.product_service import products_by_ids
+from app.db.supabase import get_client
 
 from app.schemas.assistant import ChatRequest, ChatResponse, IntentEnum
-from app.db.session import get_db
-from app.models.product import Product
-from app.models.order import Order, OrderItem
+# No local DB session; using Supabase only
+# SQLAlchemy models removed; using Supabase now
 from app.schemas.product import ProductOut
 from app.core.email import send_order_confirmation_email
 
 router = APIRouter()
 
+# Initialize Groq client
+# In a real app, this should be in a dependency or core module
+# Using custom Groq HTTP client llm (reads GROQ_API_KEY from .env)
 
-def detect_intent(text: str) -> IntentEnum:
-    t = text.lower()
-    if any(w in t for w in ["show", "list", "all items", "all desserts", "menu", "what do you have", "available"]):
-        return IntentEnum.recommend_products
-    if any(w in t for w in ["recommend", "suggest", "what should i"]):
-        return IntentEnum.recommend_products
-    if any(w in t for w in ["buy", "purchase", "place an order", "i want to order", "order"]):
-        return IntentEnum.create_order
-    if any(w in t for w in ["status", "track", "where is my"]):
-        return IntentEnum.order_inquiry
-    if any(w in t for w in ["hi", "hello", "hey", "good morning", "good evening"]):
-        return IntentEnum.greeting
-    return IntentEnum.fallback
+SYSTEM_PROMPT = """You are a helpful bakery assistant for 'Dough-Re-Me'. 
+Your goal is to help customers place orders, recommend products, or answer questions.
 
-def extract_order_details(text: str, db: Session) -> Tuple[Optional[Product], int]:
-    """Try to extract product and quantity from text."""
-    # Simple quantity extraction
-    qty_match = re.search(r'\b(\d+)\b', text)
-    quantity = int(qty_match.group(1)) if qty_match else 1
-    
-    # Simple product extraction (fuzzy match would be better, but exact substring for now)
-    products = db.query(Product).all()
-    found_product = None
-    text_lower = text.lower()
-    
-    for p in products:
-        if p.name.lower() in text_lower:
-            found_product = p
-            break
-            
-    return found_product, quantity
+You have access to the following products (IDs are important):
+{products_list}
 
-def extract_customer_details(text: str) -> Tuple[Optional[str], Optional[str], Optional[str]]:
-    """Try to extract name, email, phone."""
-    # Very basic extraction
-    email_match = re.search(r'[\w\.-]+@[\w\.-]+\.\w+', text)
-    email = email_match.group(0) if email_match else None
-    
-    phone_match = re.search(r'\b\d{10,}\b', text)
-    phone = phone_match.group(0) if phone_match else None
-    
-    # Name is hard to extract without NLP, assuming comma separated or just taking the rest?
-    # For this simple version, we might need to ask for them specifically or assume a format.
-    # Let's try to find a name if it looks like "My name is X" or just assume the first part if comma separated.
-    name = None
-    if "name is" in text.lower():
-        parts = text.lower().split("name is")
-        if len(parts) > 1:
-            name_part = parts[1].strip().split()[0]
-            name = name_part.strip(",.").title()
-    elif "," in text:
-        parts = text.split(",")
-        # Assume first part is name if not email/phone
-        potential_name = parts[0].strip()
-        if "@" not in potential_name and not potential_name.isdigit():
-            name = potential_name
-            
-    return name, email, phone
+When a user wants to order:
+1. Identify the product they want (fuzzy match to the list).
+2. Extract quantity (default to 1).
+3. Extract customer details: Name, Email, Phone.
+4. If any detail is missing (Product, Quantity, Name, Email, Phone), ask for it politely.
+5. If ALL details are present, output a JSON object with the key "action": "create_order" and the details.
+
+Output Format:
+Always return a JSON object.
+{{
+  "intent": "create_order" | "recommend_products" | "greeting" | "order_inquiry" | "fallback",
+  "reply_text": "The text to show the user",
+  "order_details": {{
+      "product_id": 123,
+      "quantity": 2,
+      "customer_name": "John",
+      "customer_email": "john@example.com",
+      "customer_phone": "1234567890"
+  }} (only if intent is create_order and ALL details are present, otherwise null),
+  "missing_info": ["product", "customer_name", ...] (list of missing fields if intent is create_order)
+}}
+
+Example 1 (Incomplete Order):
+User: "I want a cake"
+JSON:
+{{
+  "intent": "create_order",
+  "reply_text": "Which cake would you like? We have Chocolate Cake and Vanilla Sponge.",
+  "order_details": null,
+  "missing_info": ["product_id"]
+}}
+
+Example 2 (Complete Order):
+User: "I want 2 Chocolate Cakes. Name is Alice, alice@test.com, 555-1234"
+JSON:
+{{
+  "intent": "create_order",
+  "reply_text": "Order placed! I've sent a confirmation to alice@test.com.",
+  "order_details": {{
+      "product_id": 1,
+      "quantity": 2,
+      "customer_name": "Alice",
+      "customer_email": "alice@test.com",
+      "customer_phone": "555-1234"
+  }},
+  "missing_info": []
+}}
+"""
+
+# Build products context from Supabase for the system prompt
+def get_products_context() -> str:
+    try:
+        supa = get_client()
+        resp = supa.table("desserts").select("id,name,price").limit(50).execute()
+        rows = resp.data or []
+        return "\n".join([f"- ID {r.get('id')}: {r.get('name')} (${float(r.get('price', 0)):.2f})" for r in rows])
+    except Exception:
+        return ""
 
 @router.post("/chat", response_model=ChatResponse)
-def chat(request: ChatRequest, db: Session = Depends(get_db)):
-    """Chat endpoint with order creation capability."""
-    # Use last user message
-    last_user_msg = None
-    history_text = ""
+def chat(request: ChatRequest):
+    """Chat endpoint using Llama 3."""
+    
+    # 1. Prepare Context
+    products_context = get_products_context()
+    messages = [
+        {"role": "system", "content": SYSTEM_PROMPT.format(products_list=products_context)}
+    ]
+    # Add conversation history
     for m in request.messages:
-        if m.role == "user":
-            last_user_msg = m.content
-        history_text += f" {m.content}" # Aggregate context
-            
-    if not last_user_msg:
-        last_user_msg = request.messages[-1].content if request.messages else ""
+        messages.append({"role": m.role, "content": m.content})
+        
+    # 2. Call Groq via custom client
+    try:
+        response_text = llm.chat(
+            system_prompt=SYSTEM_PROMPT,
+            messages=messages,
+            temperature=0.0,
+            max_tokens=512
+        )
+        data = json.loads(response_text)
+    except Exception as e:
+        print(f"LLM Error: {e}")
+        # Fallback
+        friendly = "Sorry, my assistant service is not configured. Please set GROQ_API_KEY in .env and restart." if "Missing GROQ_API_KEY" in str(e) or "invalid_api_key" in str(e).lower() else "Sorry, I'm having trouble connecting to my brain right now. Please try again."
+        return ChatResponse(reply={
+            "intent": IntentEnum.fallback,
+            "text": friendly,
+            "suggested_products": []
+        })
 
-    intent = detect_intent(last_user_msg)
+    intent = IntentEnum(data.get("intent", "fallback"))
+    reply_text = data.get("reply_text", "")
+    order_details = data.get("order_details")
     
-    # Override intent if we are in the middle of an order flow (heuristic)
-    # If previous bot message asked for details, we continue that flow.
-    # For simplicity, we'll re-evaluate intent based on full context or just current message.
-    # Let's stick to current message intent, but if fallback, check if we are providing details.
-    
-    if intent == IntentEnum.fallback:
-        # Check if we might be providing order details
-        if "email" in last_user_msg or "@" in last_user_msg or "name is" in last_user_msg:
-             intent = IntentEnum.create_order
-        elif any(char.isdigit() for char in last_user_msg) and "order" in history_text.lower():
-             intent = IntentEnum.create_order
-
-    reply_text = """Sorry, I didn't quite get that. You can ask me to recommend desserts, check order status, or place an order."""
     suggested: List[ProductOut] = []
 
-    if intent == IntentEnum.recommend_products:
-        # Simple filters: by category and price range
-        q = db.query(Product).filter(Product.in_stock == True)
-        if request.category:
-            q = q.filter(Product.category == request.category)
-        if request.price_min is not None:
-            q = q.filter(Product.price >= request.price_min)
-        if request.price_max is not None:
-            q = q.filter(Product.price <= request.price_max)
-        products = q.limit(request.top_n).all()
-        suggested = [ProductOut.model_validate(p) for p in products]
-        
-        if "show" in last_user_msg.lower() or "list" in last_user_msg.lower() or "all" in last_user_msg.lower():
-            reply_text = f"Here are all {len(suggested)} available desserts from our menu:"
-        else:
-            reply_text = f"Here are {len(suggested)} desserts you might like:" if suggested else "I couldn't find desserts matching that filter."
-        
-    elif intent == IntentEnum.greeting:
-        reply_text = "Hi! I can help recommend desserts, check your order, or help you place a new order. What would you like?"
-        
-    elif intent == IntentEnum.order_inquiry:
-        reply_text = "Please provide your order id and I'll look it up (order-tracking not fully implemented)."
-        
-    elif intent == IntentEnum.create_order:
-        # 1. Extract Product
-        product, quantity = extract_order_details(history_text, db) # Look at history for product
-        
-        # 2. Extract Customer Info
-        name, email, phone = extract_customer_details(last_user_msg) # Look at current msg for details primarily
-        if not name or not email:
-             name, email, phone = extract_customer_details(history_text) # Fallback to history
-
-        if not product:
-            reply_text = "What would you like to order? We have cakes, cookies, and more."
-            # Suggest some popular products
-            products = db.query(Product).limit(3).all()
-            suggested = [ProductOut.model_validate(p) for p in products]
-        elif not name or not email:
-            reply_text = f"Great! {quantity} x {product.name}. To finish the order, please provide your Name, Email, and Phone number."
-        else:
-            # Create Order
-            total_amount = product.price * quantity
-            order = Order(
-                customer_name=name,
-                customer_email=email,
-                customer_phone=phone,
-                total_amount=total_amount,
-                status="pending"
+    # 3. Handle Actions
+    if intent == IntentEnum.create_order and order_details:
+        # Create order and items in Supabase
+        try:
+            supa = get_client()
+            o_resp = (
+                supa.table("orders")
+                .insert({
+                    "customer_name": order_details.get("customer_name"),
+                    "customer_email": order_details.get("customer_email"),
+                    "customer_phone": order_details.get("customer_phone"),
+                    "total_amount": order_details.get("total_amount", 0),
+                    "status": "pending",
+                })
+                .select("id")
+                .execute()
             )
-            db.add(order)
-            db.flush()
-            
-            order_item = OrderItem(
-                order_id=order.id,
-                product_id=product.id,
-                quantity=quantity,
-                price=product.price
-            )
-            db.add(order_item)
-            db.commit()
-            db.refresh(order)
-            
-            # Send Email
-            order_details = {
-                "id": order.id,
-                "customer_name": name,
-                "total_amount": total_amount,
-                "items": [{"product_name": product.name, "quantity": quantity, "price": product.price}]
-            }
-            send_order_confirmation_email(email, order_details)
-            
-            reply_text = f"Order #{order.id} placed successfully! A confirmation email has been sent to {email}."
+            order_id = (o_resp.data or [{}])[0].get("id")
+            if order_id:
+                items = order_details.get("items") or []
+                items_payload = [
+                    {
+                        "order_id": order_id,
+                        "product_id": it.get("product_id"),
+                        "quantity": it.get("quantity", 1),
+                        "price": it.get("price", 0),
+                    }
+                    for it in items
+                    if it.get("product_id") is not None
+                ]
+                if items_payload:
+                    supa.table("order_items").insert(items_payload).execute()
+                # Send email with minimal order details
+                cust_email = order_details.get("customer_email")
+                if cust_email:
+                    send_order_confirmation_email(
+                        cust_email,
+                        {
+                            "id": order_id,
+                            "customer_name": order_details.get("customer_name"),
+                            "items": items_payload,
+                            "total_amount": order_details.get("total_amount", 0),
+                        },
+                    )
+        except Exception:
+            pass
+    elif intent == IntentEnum.recommend_products:
+        # Map product_ids from model if provided; else fallback to top 3
+        ids = data.get("product_ids") or []
+        if isinstance(ids, list) and ids:
+            suggested = products_by_ids(ids)
+        else:
+            try:
+                supa = get_client()
+                resp = supa.table("desserts").select("id,name,price,img,description,category,in_stock").limit(3).execute()
+                rows = resp.data or []
+                suggested = [
+                    ProductOut(
+                        id=row["id"],
+                        name=row.get("name"),
+                        price=float(row.get("price", 0)),
+                        img=row.get("img"),
+                        description=row.get("description"),
+                        category=row.get("category"),
+                        in_stock=bool(row.get("in_stock", True)),
+                    )
+                    for row in rows
+                ]
+            except Exception:
+                suggested = []
 
     return ChatResponse(reply={"intent": intent, "text": reply_text, "suggested_products": suggested})

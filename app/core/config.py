@@ -23,6 +23,9 @@ class Settings(BaseSettings):
     smtp_username: str = ""
     smtp_password: str = ""
     sender_email: str = ""
+
+    # LLM / Assistant
+    groq_api_key: Optional[str] = None
     
     @property
     def get_database_url(self) -> str:

@@ -47,12 +47,55 @@
     </main>
     <script src="/static/cart.js"></script>
     <script>
-      const product = { id: 'p4', name: 'Mango Cheesecake', price: 80 };
-      document.getElementById('addBtn').addEventListener('click', () => {
-        const qty = Math.max(1, parseInt(document.getElementById('qty').value) || 1);
-        const size = document.getElementById('size').value;
-        addItemToCart({ id: product.id, name: product.name, price: product.price, quantity: qty, options: { size } });
-      });
+      const params = new URLSearchParams(location.search);
+      const id = params.get('id');
+
+      async function loadProduct(){
+        const nameEl = document.getElementById('prodName');
+        const priceEl = document.getElementById('prodPrice');
+        const imgEl = document.getElementById('prodImg');
+        const metaEl = document.getElementById('prodMeta');
+        const addBtn = document.getElementById('addBtn');
+
+        if(!id){
+          nameEl.textContent = 'No product selected';
+          priceEl.textContent = '₹0';
+          metaEl.textContent = 'Please open via index and select a product.';
+          addBtn.disabled = true;
+          return;
+        }
+
+        const res = await fetch('/api/v1/products/' + id);
+        if(!res.ok){
+          nameEl.textContent = 'Product not found';
+          priceEl.textContent = '₹0';
+          metaEl.textContent = 'The requested product does not exist.';
+          addBtn.disabled = true;
+          return;
+        }
+
+        const p = await res.json();
+        nameEl.textContent = p.name || 'Product';
+        priceEl.textContent = '₹' + (p.price ?? 0);
+        imgEl.src = p.img || '/static/images/shop.png';
+        imgEl.alt = p.name || 'Product';
+        metaEl.textContent = (p.category ? p.category + ' • ' : '') + (p.description ? p.description : '');
+
+        if(p.in_stock === false){
+          addBtn.disabled = true;
+          addBtn.textContent = 'Out of stock';
+        } else {
+          addBtn.disabled = false;
+        }
+
+        addBtn.onclick = () => {
+          const qty = Math.max(1, parseInt(document.getElementById('qty').value) || 1);
+          const size = document.getElementById('size').value;
+          addItemToCart({ id: p.id, name: p.name, price: p.price, quantity: qty, img: p.img, category: p.category, options: { size } });
+        };
+      }
+
+      loadProduct();
     </script>
   </body>
 </html>

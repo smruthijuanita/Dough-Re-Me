@@ -1,0 +1,10 @@
+--- Testing Default Settings ---
+Base: https://api.groq.com/openai/v1
+API: https://api.groq.com/openai/v1
+Client URL: https://api.groq.com/openai/v1/chat/completions
+
+--- Testing Explicit Base URL (v1) ---
+Client URL: https://api.groq.com/openai/v1/chat/completions
+
+--- Testing Explicit API URL (v1) ---
+Client URL: https://api.groq.com/openai/v1/chat/completions

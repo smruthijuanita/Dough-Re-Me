@@ -1,352 +1,66 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Orders - Dough‑Re‑Me</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      min-height: 100vh;
-      padding: 20px;
-    }
-    .navbar {
-      background: rgba(255,255,255,0.95);
-      padding: 15px 30px;
-      border-radius: 15px;
-      margin-bottom: 30px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-    }
-    .navbar h1 {
-      color: #667eea;
-      font-size: 28px;
-      font-weight: 700;
-    }
-    .nav-links {
-      display: flex;
-      gap: 20px;
-    }
-    .nav-links a {
-      color: #333;
-      text-decoration: none;
-      padding: 8px 16px;
-      border-radius: 8px;
-      transition: all 0.3s;
-      font-weight: 500;
-    }
-    .nav-links a:hover {
-      background: #667eea;
-      color: white;
-    }
-    .container {
-      max-width: 1000px;
-      margin: 0 auto;
-    }
-    .page-header {
-      text-align: center;
-      color: white;
-      margin-bottom: 30px;
-    }
-    .page-header h1 {
-      font-size: 48px;
-      margin-bottom: 10px;
-    }
-    .page-header p {
-      font-size: 18px;
-      opacity: 0.9;
-    }
-    .order-lookup {
-      background: white;
-      border-radius: 20px;
-      padding: 30px;
-      margin-bottom: 30px;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.15);
-    }
-    .order-lookup h2 {
-      font-size: 24px;
-      color: #2d3748;
-      margin-bottom: 20px;
-      text-align: center;
-    }
-    .lookup-form {
-      display: flex;
-      gap: 15px;
-      max-width: 600px;
-      margin: 0 auto;
-    }
-    .lookup-form input {
-      flex: 1;
-      padding: 14px;
-      border: 2px solid #e2e8f0;
-      border-radius: 10px;
-      font-size: 16px;
-      transition: all 0.3s;
-    }
-    .lookup-form input:focus {
-      outline: none;
-      border-color: #667eea;
-      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-    }
-    .lookup-btn {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      border: none;
-      padding: 14px 32px;
-      font-size: 16px;
-      font-weight: 700;
-      border-radius: 10px;
-      cursor: pointer;
-      transition: all 0.3s;
-      white-space: nowrap;
-    }
-    .lookup-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-    }
-    .order-details {
-      background: white;
-      border-radius: 20px;
-      padding: 40px;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.15);
-      display: none;
-    }
-    .order-details.active {
-      display: block;
-      animation: fadeIn 0.3s ease-out;
-    }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    .order-header {
-      border-bottom: 3px solid #e2e8f0;
-      padding-bottom: 20px;
-      margin-bottom: 30px;
-    }
-    .order-id {
-      font-size: 32px;
-      font-weight: 700;
-      color: #2d3748;
-      margin-bottom: 10px;
-    }
-    .order-meta {
-      display: flex;
-      gap: 30px;
-      flex-wrap: wrap;
-    }
-    .meta-item {
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
-    }
-    .meta-label {
-      font-size: 12px;
-      text-transform: uppercase;
-      color: #718096;
-      font-weight: 600;
-      letter-spacing: 1px;
-    }
-    .meta-value {
-      font-size: 16px;
-      color: #2d3748;
-      font-weight: 600;
-    }
-    .status-badge {
-      display: inline-block;
-      padding: 8px 16px;
-      border-radius: 20px;
-      font-size: 14px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-    .status-pending {
-      background: #fef3c7;
-      color: #92400e;
-    }
-    .status-confirmed {
-      background: #dbeafe;
-      color: #1e3a8a;
-    }
-    .status-completed {
-      background: #d1fae5;
-      color: #065f46;
-    }
-    .customer-info {
-      background: #f7fafc;
-      padding: 25px;
-      border-radius: 12px;
-      margin-bottom: 30px;
-    }
-    .customer-info h3 {
-      font-size: 20px;
-      color: #2d3748;
-      margin-bottom: 15px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    .info-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 15px;
-    }
-    .info-item {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      color: #4a5568;
-    }
-    .order-items {
-      margin-bottom: 30px;
-    }
-    .order-items h3 {
-      font-size: 20px;
-      color: #2d3748;
-      margin-bottom: 20px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    .order-item {
-      display: flex;
-      gap: 20px;
-      padding: 20px;
-      border: 2px solid #e2e8f0;
-      border-radius: 12px;
-      margin-bottom: 15px;
-      transition: all 0.3s;
-    }
-    .order-item:hover {
-      border-color: #667eea;
-      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.15);
-    }
-    .order-item img {
-      width: 80px;
-      height: 80px;
-      object-fit: cover;
-      border-radius: 8px;
-    }
-    .item-info {
-      flex: 1;
-    }
-    .item-name {
-      font-size: 18px;
-      font-weight: 700;
-      color: #2d3748;
-      margin-bottom: 5px;
-    }
-    .item-quantity {
-      color: #718096;
-      font-size: 14px;
-    }
-    .item-price {
-      font-size: 20px;
-      color: #667eea;
-      font-weight: 700;
-      text-align: right;
-    }
-    .order-summary {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      padding: 25px;
-      border-radius: 12px;
-    }
-    .summary-row {
-      display: flex;
-      justify-content: space-between;
-      padding: 10px 0;
-      font-size: 16px;
-    }
-    .summary-row.total {
-      border-top: 2px solid rgba(255,255,255,0.3);
-      margin-top: 10px;
-      padding-top: 15px;
-      font-size: 28px;
-      font-weight: 700;
-    }
-    .empty-state {
-      text-align: center;
-      padding: 80px 20px;
-      color: #718096;
-    }
-    .empty-state-icon {
-      font-size: 100px;
-      margin-bottom: 20px;
-    }
-    .empty-state h3 {
-      font-size: 28px;
-      margin-bottom: 10px;
-      color: #2d3748;
-    }
-    .empty-state p {
-      font-size: 16px;
-      margin-bottom: 25px;
-    }
-    .error-message {
-      background: #fed7d7;
-      color: #742a2a;
-      padding: 20px;
-      border-radius: 10px;
-      margin-top: 20px;
-      text-align: center;
-      font-weight: 600;
-    }
-    @media (max-width: 768px) {
-      .lookup-form {
-        flex-direction: column;
-      }
-      .order-meta {
-        flex-direction: column;
-        gap: 15px;
-      }
-      .order-item {
-        flex-direction: column;
-      }
-      .item-price {
-        text-align: left;
-      }
-    }
+    :root{ --bg:#fffaf7;--card:#ffffff;--ink:#2b2b2b;--muted:#6b7280;--brand:#f59e0b;--brand-dark:#d97706;--accent:#ef4444;--ring:rgba(245,158,11,.18) }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{margin:0;font-family:Poppins,system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,Helvetica,sans-serif;color:var(--ink);background:var(--bg)}
+    img{max-width:100%;display:block}
+    a{text-decoration:none;color:inherit}
+    .container{width:min(1000px,92vw);margin-inline:auto;padding:18px}
+    header{position:sticky;top:0;background:rgba(255,255,255,.85);backdrop-filter:saturate(180%) blur(12px);z-index:50;border-bottom:1px solid #0001}
+    .nav{display:flex;align-items:center;justify-content:space-between;padding:14px 0}
+    .brand{display:flex;gap:.6rem;align-items:center;font-weight:700;font-size:1.05rem}
+    .brand .logo{height:34px;width:34px;border-radius:10px;display:grid;place-items:center}
+    .links{display:flex;gap:1rem;align-items:center}
+    .links a{padding:.5rem .75rem;border-radius:10px;color:#374151;font-weight:600}
+    .links a:hover{background:#00000008}
+    .cart{position:relative}
+    .badge{position:absolute;top:-6px;right:-6px;background:var(--accent);color:#fff;border-radius:999px;font-size:.65rem;padding:.15rem .4rem;font-weight:700}
+
+    .card{background:var(--card);border-radius:16px;box-shadow:0 6px 20px #0000000d;border:1px solid #00000008;padding:16px}
+    .summary-row{display:flex;justify-content:space-between;padding:8px 0}
+    .meta{color:var(--muted)}
   </style>
 </head>
 <body>
-  <div class="navbar">
-    <h1>🥖 Dough-Re-Me</h1>
-    <div class="nav-links">
-      <a href="/">Home</a>
-      <a href="/cart.html">🛒 Cart</a>
-      <a href="/orders.html">📦 Orders</a>
+  <header>
+    <div class="container nav">
+      <a href="/" class="brand">
+        <span class="logo"><img src="/static/images/logo.png" alt="Logo"></span>
+        <span>Dough‑Re‑Me Bakery</span>
+      </a>
+      <nav class="links" aria-label="Primary">
+        <a href="/">Home</a>
+        <a href="/cart.html">Cart</a>
+      </nav>
+      <a class="cart" href="/cart.html">
+        🧺<span id="cartBadge" class="badge">0</span>
+      </a>
     </div>
-  </div>
-  <div class="container">
+  </header>
+  <main class="container">
     <div class="page-header">
-      <h1>📦 Track Your Orders</h1>
-      <p>Enter your order ID or email to view order details</p>
+      <h1 style="margin:8px 0">Orders</h1>
+      <p class="meta">Enter your order ID or email to view details</p>
     </div>
-    
-    <div class="order-lookup">
-      <h2>🔍 Find Your Order</h2>
-      <form class="lookup-form" id="lookupForm">
-        <input 
-          type="text" 
-          id="searchInput" 
-          placeholder="Enter Order ID or Email Address" 
-          required
-        >
-        <button type="submit" class="lookup-btn">Search Order</button>
+    <section class="card">
+      <form id="lookupForm" style="display:flex;gap:10px">
+        <input id="searchInput" placeholder="Order ID or Email" style="flex:1;padding:.7rem;border:1px solid #e5e7eb;border-radius:10px" required>
+        <button type="submit" class="btn" style="padding:.7rem 1rem;border-radius:10px;background:var(--brand);color:#111;border:none;font-weight:700">Search</button>
       </form>
-      <div id="errorMessage"></div>
-    </div>
+      <div id="errorMessage" style="margin-top:10px"></div>
+    </section>
 
-    <div class="order-details" id="orderDetails">
-      <!-- Order details will be rendered here -->
-    </div>
-  </div>
+    <section class="card" id="orderDetails" style="margin-top:14px;display:none"></section>
+  </main>
 
   <script>
     const params = new URLSearchParams(location.search);
@@ -393,37 +107,25 @@
 
         renderOrder(order);
       } catch (error) {
-        errorEl.innerHTML = `
-          <div class="error-message">
-            ⚠️ ${error.message}. Please check your order ID or email address.
-          </div>
-        `;
+        errorEl.innerHTML = `<p class="meta" style="color:#b91c1c">${error.message}. Please check your order ID or email address.</p>`;
       }
     }
 
     function renderOrder(order) {
       const detailsEl = document.getElementById('orderDetails');
-      
-      const statusClass = order.status === 'pending' ? 'status-pending' : 
-                         order.status === 'confirmed' ? 'status-confirmed' : 
-                         'status-completed';
-      
-      const orderDate = new Date(order.created_at).toLocaleDateString('en-IN', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
+      detailsEl.style.display = 'block';
 
+      const orderDate = new Date(order.created_at).toLocaleString('en-IN');
       const itemsHTML = order.items.map(item => `
-        <div class="order-item">
-          <img src="${item.product?.img || '/static/images/shop.png'}" alt="${item.product?.name || 'Product'}">
-          <div class="item-info">
-            <div class="item-name">${item.product?.name || 'Product'}</div>
-            <div class="item-quantity">Quantity: ${item.quantity}</div>
+        <div style="display:flex;gap:12px;align-items:center;border-bottom:1px solid #00000010;padding:10px 0">
+          <img src="${item.product?.img || '/static/images/shop.png'}" alt="${item.product?.name || 'Product'}" style="width:64px;height:64px;border-radius:10px;object-fit:cover">
+          <div style="flex:1">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <strong>${item.product?.name || 'Product'}</strong>
+              <span>₹${item.price_at_time * item.quantity}</span>
+            </div>
+            <div class="meta">Qty: ${item.quantity} · ₹${item.price_at_time}</div>
           </div>
-          <div class="item-price">₹${item.price_at_time * item.quantity}</div>
         </div>
       `).join('');
 
@@ -432,64 +134,25 @@
       const total = subtotal + tax;
 
       detailsEl.innerHTML = `
-        <div class="order-header">
-          <div class="order-id">Order #${order.id}</div>
-          <div class="order-meta">
-            <div class="meta-item">
-              <span class="meta-label">Status</span>
-              <span class="status-badge ${statusClass}">${order.status}</span>
-            </div>
-            <div class="meta-item">
-              <span class="meta-label">Order Date</span>
-              <span class="meta-value">${orderDate}</span>
-            </div>
-            <div class="meta-item">
-              <span class="meta-label">Total Amount</span>
-              <span class="meta-value">₹${total}</span>
-            </div>
-          </div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <h2 style="margin:6px 0">Order #${order.id}</h2>
+          <span class="meta">${order.status} · ${orderDate}</span>
         </div>
-
-        <div class="customer-info">
-          <h3>👤 Customer Information</h3>
-          <div class="info-grid">
-            <div class="info-item">
-              <span>📝</span>
-              <span><strong>Name:</strong> ${order.customer_name}</span>
-            </div>
-            <div class="info-item">
-              <span>📧</span>
-              <span><strong>Email:</strong> ${order.customer_email}</span>
-            </div>
-            <div class="info-item">
-              <span>📱</span>
-              <span><strong>Phone:</strong> ${order.customer_phone || 'N/A'}</span>
-            </div>
-          </div>
+        <div class="card" style="margin-top:10px">
+          <div class="meta">Customer</div>
+          <div><strong>${order.customer_name}</strong></div>
+          <div class="meta">${order.customer_email} · ${order.customer_phone || 'N/A'}</div>
         </div>
-
-        <div class="order-items">
-          <h3>🛍️ Order Items</h3>
+        <div style="margin-top:12px" class="card">
+          <div class="meta">Items</div>
           ${itemsHTML}
         </div>
-
-        <div class="order-summary">
-          <div class="summary-row">
-            <span>Subtotal</span>
-            <span>₹${subtotal}</span>
-          </div>
-          <div class="summary-row">
-            <span>Tax (5%)</span>
-            <span>₹${tax}</span>
-          </div>
-          <div class="summary-row total">
-            <span>Total</span>
-            <span>₹${total}</span>
-          </div>
+        <div style="margin-top:12px" class="card">
+          <div class="summary-row"><span>Subtotal</span><span>₹${subtotal}</span></div>
+          <div class="summary-row"><span>Tax (5%)</span><span>₹${tax}</span></div>
+          <div class="summary-row" style="font-weight:800"><span>Total</span><span>₹${total}</span></div>
         </div>
       `;
-
-      detailsEl.classList.add('active');
     }
   </script>
 </body>

@@ -11,6 +11,7 @@ from app.schemas.product import ProductOut
 class IntentEnum(str, Enum):
     recommend_products = "recommend_products"
     order_inquiry = "order_inquiry"
+    create_order = "create_order"
     greeting = "greeting"
     fallback = "fallback"
 

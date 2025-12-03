@@ -1,6 +1,6 @@
 """Seed database with sample bakery products."""
 from app.db.session import SessionLocal
-from app.models.product import Product
+# SQLAlchemy models removed; using Supabase now
 
 def seed_products():
     """Add sample products to the database."""

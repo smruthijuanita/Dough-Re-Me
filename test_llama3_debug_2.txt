@@ -1,0 +1,71 @@
+============================= test session starts =============================
+platform win32 -- Python 3.13.5, pytest-8.4.2, pluggy-1.6.0
+rootdir: D:\Dough-Re-Me
+plugins: anyio-4.9.0, langsmith-0.4.49
+collected 1 item
+
+tests\test_assistant_llama3.py F
+
+================================== FAILURES ===================================
+____________________________ test_chat_llama3_flow ____________________________
+
+mock_send_email = <MagicMock name='send_order_confirmation_email' id='1622637778928'>
+mock_groq = <MagicMock name='client' id='1622637779600'>
+
+    @patch("app.api.v1.assistant.client")
+    @patch("app.api.v1.assistant.send_order_confirmation_email")
+    def test_chat_llama3_flow(mock_send_email, mock_groq):
+        mock_db = MagicMock()
+        mock_product = Product(id=1, name="Chocolate Cake", price=10.0)
+        mock_db.query.return_value.all.return_value = [mock_product]
+        mock_db.query.return_value.filter.return_value.first.return_value = mock_product
+    
+        # Mock Groq Response for Order Creation
+        mock_completion = MagicMock()
+        mock_completion.choices[0].message.content = json.dumps({
+            "intent": "create_order",
+            "reply_text": "Order placed!",
+            "order_details": {
+                "product_id": 1,
+                "quantity": 2,
+                "customer_name": "Alice",
+                "customer_email": "alice@test.com",
+                "customer_phone": "555-1234"
+            },
+            "missing_info": []
+        })
+        mock_groq.chat.completions.create.return_value = mock_completion
+    
+        # Test Request
+        req = ChatRequest(messages=[ChatMessage(role="user", content="I want 2 Chocolate Cakes. Name is Alice, alice@test.com, 555-1234")])
+>       resp = chat(req, db=mock_db)
+               ^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_assistant_llama3.py:34: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+request = ChatRequest(messages=[ChatMessage(role='user', content='I want 2 Chocolate Cakes. Name is Alice, alice@test.com, 555-1234')], top_n=5, category=None, price_min=None, price_max=None)
+db = <MagicMock id='1622637779936'>
+
+    @router.post("/chat", response_model=ChatResponse)
+    def chat(request: ChatRequest, db: Session = Depends(get_db)):
+        """Chat endpoint using Llama 3."""
+    
+        # 1. Prepare Context
+        products_context = get_products_context(db)
+        messages = [
+>           {"role": "system", "content": SYSTEM_PROMPT.format(products_list=products_context)}
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        ]
+E       KeyError: '\n  "intent"'
+
+app\api\v1\assistant.py:89: KeyError
+============================== warnings summary ===============================
+app\db\base.py:4
+  D:\Dough-Re-Me\app\db\base.py:4: MovedIn20Warning: The ``declarative_base()`` function is now available as sqlalchemy.orm.declarative_base(). (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+    Base = declarative_base()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_assistant_llama3.py::test_chat_llama3_flow - KeyError: '\n ...
+======================== 1 failed, 1 warning in 2.47s =========================

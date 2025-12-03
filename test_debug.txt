@@ -1,0 +1,35 @@
+============================= test session starts =============================
+platform win32 -- Python 3.13.5, pytest-8.4.2, pluggy-1.6.0
+rootdir: D:\Dough-Re-Me
+plugins: anyio-4.9.0, langsmith-0.4.49
+collected 4 items
+
+tests\test_assistant_order.py ..FDEBUG: Reply 1: Great! 1 x Chocolate Cake. To finish the order, please provide your Name, Email, and Phone number.
+DEBUG: Reply 2: Order #None placed successfully! A confirmation email has been sent to john@example.com.
+.
+
+================================== FAILURES ===================================
+________________________ test_extract_customer_details ________________________
+
+    def test_extract_customer_details():
+        name, email, phone = extract_customer_details("My name is John, email is john@example.com, phone 1234567890")
+        assert email == "john@example.com"
+        assert phone == "1234567890"
+        # Name extraction is basic, might fail or be partial, let's check if it got something
+>       assert name == "John"
+E       AssertionError: assert 'John,' == 'John'
+E         
+E         - John
+E         + John,
+E         ?     +
+
+tests\test_assistant_order.py:31: AssertionError
+============================== warnings summary ===============================
+app\db\base.py:4
+  D:\Dough-Re-Me\app\db\base.py:4: MovedIn20Warning: The ``declarative_base()`` function is now available as sqlalchemy.orm.declarative_base(). (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+    Base = declarative_base()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_assistant_order.py::test_extract_customer_details - Asserti...
+=================== 1 failed, 3 passed, 1 warning in 1.00s ====================
