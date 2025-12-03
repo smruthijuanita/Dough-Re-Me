@@ -1,0 +1,39 @@
+:root{
+  --bg:#fffaf7;--card:#ffffff;--ink:#2b2b2b;--muted:#6b7280;--brand:#f59e0b;--brand-dark:#d97706;--accent:#ef4444;--ring:rgba(245,158,11,.18)
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;font-family:Poppins,system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,Helvetica,sans-serif;color:var(--ink);background:var(--bg)}
+img{max-width:100%;display:block}
+a{text-decoration:none;color:inherit}
+.container{width:min(1100px,92vw);margin-inline:auto;padding:18px}
+
+/* header */
+.header{display:flex;align-items:center;justify-content:space-between;padding:12px 0}
+.brand{display:flex;gap:.6rem;align-items:center;font-weight:700;font-size:1.05rem}
+.cart{position:relative}
+.badge{position:absolute;top:-8px;right:-8px;background:var(--accent);color:#fff;border-radius:999px;font-size:.75rem;padding:.15rem .5rem;font-weight:700}
+
+/* product card */
+.product-wrap{display:grid;grid-template-columns:1fr 1fr;gap:28px;align-items:start}
+.product-card{background:var(--card);border-radius:14px;padding:18px;box-shadow:0 6px 20px #00000010;border:1px solid #00000008}
+.product-img{border-radius:12px;overflow:hidden}
+.h1{font-size:1.6rem;margin:0 0 .6rem}
+.price{font-weight:800;font-size:1.1rem}
+.meta{color:var(--muted);margin:8px 0 12px}
+
+/* form controls */
+.field{margin:10px 0}
+label{display:block;font-weight:600;margin-bottom:6px}
+select,input[type="number"],textarea{width:100%;padding:.7rem;border-radius:10px;border:1px solid #e5e7eb;background:#fff}
+.btn{display:inline-block;padding:.8rem 1rem;border-radius:12px;border:0;font-weight:700;cursor:pointer}
+.btn.primary{background:var(--brand);color:#111}
+.btn.ghost{background:transparent;border:1px solid #00000008;padding:.7rem 0.9rem}
+
+/* cart table */
+.cart-table{width:100%;border-collapse:collapse;margin-top:12px}
+.cart-table th, .cart-table td{padding:10px;border-bottom:1px solid #eee}
+.cart-actions{display:flex;gap:10px;align-items:center;justify-content:flex-end;margin-top:12px}
+
+/* responsiveness */
+@media (max-width:900px){ .product-wrap{grid-template-columns:1fr} }

@@ -1,333 +1,58 @@
 <!doctype html>
 <html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Product - Dough‑Re‑Me</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      min-height: 100vh;
-      padding: 20px;
-    }
-    .navbar {
-      background: rgba(255,255,255,0.95);
-      padding: 15px 30px;
-      border-radius: 15px;
-      margin-bottom: 30px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-    }
-    .navbar h1 {
-      color: #667eea;
-      font-size: 28px;
-      font-weight: 700;
-    }
-    .nav-links {
-      display: flex;
-      gap: 20px;
-    }
-    .nav-links a {
-      color: #333;
-      text-decoration: none;
-      padding: 8px 16px;
-      border-radius: 8px;
-      transition: all 0.3s;
-      font-weight: 500;
-    }
-    .nav-links a:hover {
-      background: #667eea;
-      color: white;
-    }
-    .container {
-      max-width: 1100px;
-      margin: 0 auto;
-      background: white;
-      border-radius: 20px;
-      padding: 40px;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.15);
-    }
-    .product-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 40px;
-      align-items: start;
-    }
-    .product-image {
-      position: relative;
-      border-radius: 15px;
-      overflow: hidden;
-      box-shadow: 0 8px 25px rgba(0,0,0,0.1);
-    }
-    .product-image img {
-      width: 100%;
-      height: 500px;
-      object-fit: cover;
-      transition: transform 0.3s;
-    }
-    .product-image:hover img {
-      transform: scale(1.05);
-    }
-    .product-info h1 {
-      font-size: 36px;
-      color: #2d3748;
-      margin-bottom: 15px;
-      font-weight: 700;
-    }
-    .category-badge {
-      display: inline-block;
-      background: linear-gradient(135deg, #667eea, #764ba2);
-      color: white;
-      padding: 6px 16px;
-      border-radius: 20px;
-      font-size: 14px;
-      font-weight: 600;
-      margin-bottom: 20px;
-    }
-    .product-description {
-      color: #4a5568;
-      font-size: 16px;
-      line-height: 1.8;
-      margin-bottom: 25px;
-      padding: 20px;
-      background: #f7fafc;
-      border-radius: 10px;
-      border-left: 4px solid #667eea;
-    }
-    .price-section {
-      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-      color: white;
-      padding: 20px;
-      border-radius: 12px;
-      margin-bottom: 25px;
-      text-align: center;
-    }
-    .price-label {
-      font-size: 14px;
-      opacity: 0.9;
-      margin-bottom: 5px;
-    }
-    .price {
-      font-size: 42px;
-      font-weight: 800;
-    }
-    .quantity-section {
-      margin-bottom: 25px;
-    }
-    .quantity-section label {
-      display: block;
-      font-size: 16px;
-      font-weight: 600;
-      color: #2d3748;
-      margin-bottom: 10px;
-    }
-    .quantity-controls {
-      display: flex;
-      align-items: center;
-      gap: 15px;
-    }
-    .qty-btn {
-      background: #667eea;
-      color: white;
-      border: none;
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      font-size: 20px;
-      cursor: pointer;
-      transition: all 0.3s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .qty-btn:hover {
-      background: #5568d3;
-      transform: scale(1.1);
-    }
-    .qty-input {
-      width: 80px;
-      height: 40px;
-      text-align: center;
-      font-size: 18px;
-      font-weight: 600;
-      border: 2px solid #e2e8f0;
-      border-radius: 8px;
-      color: #2d3748;
-    }
-    .add-to-cart-btn {
-      width: 100%;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      border: none;
-      padding: 18px;
-      font-size: 18px;
-      font-weight: 700;
-      border-radius: 12px;
-      cursor: pointer;
-      transition: all 0.3s;
-      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-    .add-to-cart-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
-    }
-    .add-to-cart-btn:active {
-      transform: translateY(0);
-    }
-    .success-message {
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      background: #48bb78;
-      color: white;
-      padding: 16px 24px;
-      border-radius: 10px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-      font-weight: 600;
-      animation: slideIn 0.3s ease-out;
-      z-index: 1000;
-    }
-    @keyframes slideIn {
-      from { transform: translateX(400px); opacity: 0; }
-      to { transform: translateX(0); opacity: 1; }
-    }
-    .stock-badge {
-      display: inline-block;
-      padding: 6px 12px;
-      border-radius: 6px;
-      font-size: 14px;
-      font-weight: 600;
-      margin-bottom: 20px;
-    }
-    .in-stock {
-      background: #c6f6d5;
-      color: #22543d;
-    }
-    .out-of-stock {
-      background: #fed7d7;
-      color: #742a2a;
-    }
-    @media (max-width: 768px) {
-      .product-grid {
-        grid-template-columns: 1fr;
-      }
-      .container {
-        padding: 20px;
-      }
-      .product-info h1 {
-        font-size: 28px;
-      }
-    }
-  </style>
-</head>
-<body>
-  <div class="navbar">
-    <h1>🥖 Dough-Re-Me</h1>
-    <div class="nav-links">
-      <a href="/">Home</a>
-      <a href="/cart.html">🛒 Cart</a>
-      <a href="/orders.html">📦 Orders</a>
-    </div>
-  </div>
-  <div class="container">
-    <div id="product"></div>
-  </div>
-  <script>
-    const params = new URLSearchParams(location.search);
-    const id = params.get('id');
-    
-    function showSuccessMessage(message) {
-      const msg = document.createElement('div');
-      msg.className = 'success-message';
-      msg.textContent = message;
-      document.body.appendChild(msg);
-      setTimeout(() => msg.remove(), 3000);
-    }
-    
-    async function load(){
-      if(!id){ 
-        document.getElementById('product').innerHTML = '<p style="text-align:center;color:#e53e3e;font-size:20px;">No product ID specified</p>'; 
-        return;
-      }
-      
-      const res = await fetch('/api/v1/products/'+id);
-      if(!res.ok){ 
-        document.getElementById('product').innerHTML = '<p style="text-align:center;color:#e53e3e;font-size:20px;">Product not found</p>'; 
-        return;
-      }
-      
-      const p = await res.json();
-      const stockBadge = p.in_stock ? 
-        '<span class="stock-badge in-stock">✓ In Stock</span>' : 
-        '<span class="stock-badge out-of-stock">✗ Out of Stock</span>';
-      
-      document.getElementById('product').innerHTML = `
-        <div class="product-grid">
-          <div class="product-image">
-            <img src="${p.img||'/static/images/shop.png'}" alt="${p.name}">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Mango Cheesecake</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <header class="container header">
+      <a class="brand" href="/index.html">Dough-Re-Me</a>
+      <a class="cart" href="/cart.html">🧺 <span id="cartBadge" class="badge">0</span></a>
+    </header>
+    <main class="container">
+      <div class="product-wrap">
+        <div class="product-card">
+          <div class="product-img"><img id="prodImg" src="/static/images/mango_cheesecake.jpeg" alt="Mango Cheesecake"></div>
+          <h1 class="h1" id="prodName">Mango Cheesecake</h1>
+          <div class="price" id="prodPrice">₹80</div>
+          <div class="meta" id="prodMeta">Cheesecake • Tropical • ★ 4.8</div>
+
+          <div class="field">
+            <label for="size">Size</label>
+            <select id="size">
+              <option value="slice">Slice</option>
+              <option value="6">6" whole</option>
+              <option value="8">8" whole</option>
+            </select>
           </div>
-          <div class="product-info">
-            <h1>${p.name}</h1>
-            ${stockBadge}
-            <span class="category-badge">${p.category || 'Dessert'}</span>
-            <div class="product-description">
-              ${p.description || 'Delicious artisan dessert made with the finest ingredients.'}
-            </div>
-            <div class="price-section">
-              <div class="price-label">Price</div>
-              <div class="price">₹${p.price}</div>
-            </div>
-            <div class="quantity-section">
-              <label>Quantity</label>
-              <div class="quantity-controls">
-                <button class="qty-btn" id="decreaseQty">−</button>
-                <input id="qty" type="number" value="1" min="1" max="99" class="qty-input" readonly>
-                <button class="qty-btn" id="increaseQty">+</button>
-              </div>
-            </div>
-            <button id="add" class="add-to-cart-btn" ${!p.in_stock ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>
-              ${p.in_stock ? '🛒 Add to Cart' : 'Out of Stock'}
-            </button>
+          <div class="field">
+            <label for="qty">Quantity</label>
+            <input id="qty" type="number" min="1" value="1" />
           </div>
+          <div class="field">
+            <label for="note">Notes</label>
+            <textarea id="note"></textarea>
+          </div>
+          <button class="btn primary add-to-cart-btn" id="addBtn">Add to cart</button>
         </div>
-      `;
-      
-      const qtyInput = document.getElementById('qty');
-      document.getElementById('decreaseQty').addEventListener('click', () => {
-        const current = parseInt(qtyInput.value);
-        if (current > 1) qtyInput.value = current - 1;
+        <aside>
+          <div class="product-card"><h3>Info</h3><p>Best when chilled; contains dairy.</p></div>
+        </aside>
+      </div>
+    </main>
+    <script src="/static/cart.js"></script>
+    <script>
+      const product = { id: 'p4', name: 'Mango Cheesecake', price: 80 };
+      document.getElementById('addBtn').addEventListener('click', () => {
+        const qty = Math.max(1, parseInt(document.getElementById('qty').value) || 1);
+        const size = document.getElementById('size').value;
+        addItemToCart({ id: product.id, name: product.name, price: product.price, quantity: qty, options: { size } });
       });
-      
-      document.getElementById('increaseQty').addEventListener('click', () => {
-        const current = parseInt(qtyInput.value);
-        if (current < 99) qtyInput.value = current + 1;
-      });
-      
-      if (p.in_stock) {
-        document.getElementById('add').addEventListener('click', ()=>{
-          const qty = parseInt(qtyInput.value||1,10);
-          const key = 'drm_cart_v1';
-          const raw = localStorage.getItem(key)||'[]';
-          const arr = JSON.parse(raw);
-          const found = arr.find(x=>x.id===p.id);
-          if(found){ 
-            found.quantity += qty;
-            showSuccessMessage(`Updated ${p.name} quantity to ${found.quantity}`);
-          } else { 
-            arr.push({id:p.id,name:p.name,price:p.price,quantity:qty,img:p.img,category:p.category});
-            showSuccessMessage(`Added ${qty}x ${p.name} to cart!`);
-          }
-          localStorage.setItem(key,JSON.stringify(arr));
-        });
-      }
-    }
-    load();
-  </script>
-</body>
+    </script>
+  </body>
 </html>
