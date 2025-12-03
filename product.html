@@ -1,0 +1,101 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Mango Cheesecake</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <header class="container header">
+      <a class="brand" href="/index.html">Dough-Re-Me</a>
+      <a class="cart" href="/cart.html">🧺 <span id="cartBadge" class="badge">0</span></a>
+    </header>
+    <main class="container">
+      <div class="product-wrap">
+        <div class="product-card">
+          <div class="product-img"><img id="prodImg" src="/static/images/mango_cheesecake.jpeg" alt="Mango Cheesecake"></div>
+          <h1 class="h1" id="prodName">Mango Cheesecake</h1>
+          <div class="price" id="prodPrice">₹80</div>
+          <div class="meta" id="prodMeta">Cheesecake • Tropical • ★ 4.8</div>
+
+          <div class="field">
+            <label for="size">Size</label>
+            <select id="size">
+              <option value="slice">Slice</option>
+              <option value="6">6" whole</option>
+              <option value="8">8" whole</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="qty">Quantity</label>
+            <input id="qty" type="number" min="1" value="1" />
+          </div>
+          <div class="field">
+            <label for="note">Notes</label>
+            <textarea id="note"></textarea>
+          </div>
+          <button class="btn primary add-to-cart-btn" id="addBtn">Add to cart</button>
+        </div>
+        <aside>
+          <div class="product-card"><h3>Info</h3><p>Best when chilled; contains dairy.</p></div>
+        </aside>
+      </div>
+    </main>
+    <script src="/static/cart.js"></script>
+    <script>
+      const params = new URLSearchParams(location.search);
+      const id = params.get('id');
+
+      async function loadProduct(){
+        const nameEl = document.getElementById('prodName');
+        const priceEl = document.getElementById('prodPrice');
+        const imgEl = document.getElementById('prodImg');
+        const metaEl = document.getElementById('prodMeta');
+        const addBtn = document.getElementById('addBtn');
+
+        if(!id){
+          nameEl.textContent = 'No product selected';
+          priceEl.textContent = '₹0';
+          metaEl.textContent = 'Please open via index and select a product.';
+          addBtn.disabled = true;
+          return;
+        }
+
+        const res = await fetch('/api/v1/products/' + id);
+        if(!res.ok){
+          nameEl.textContent = 'Product not found';
+          priceEl.textContent = '₹0';
+          metaEl.textContent = 'The requested product does not exist.';
+          addBtn.disabled = true;
+          return;
+        }
+
+        const p = await res.json();
+        nameEl.textContent = p.name || 'Product';
+        priceEl.textContent = '₹' + (p.price ?? 0);
+        imgEl.src = p.img || '/static/images/shop.png';
+        imgEl.alt = p.name || 'Product';
+        metaEl.textContent = (p.category ? p.category + ' • ' : '') + (p.description ? p.description : '');
+
+        if(p.in_stock === false){
+          addBtn.disabled = true;
+          addBtn.textContent = 'Out of stock';
+        } else {
+          addBtn.disabled = false;
+        }
+
+        addBtn.onclick = () => {
+          const qty = Math.max(1, parseInt(document.getElementById('qty').value) || 1);
+          const size = document.getElementById('size').value;
+          addItemToCart({ id: p.id, name: p.name, price: p.price, quantity: qty, img: p.img, category: p.category, options: { size } });
+        };
+      }
+
+      loadProduct();
+    </script>
+  </body>
+</html>

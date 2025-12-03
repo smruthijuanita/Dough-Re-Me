@@ -1,5 +1,5 @@
 """Pydantic schemas for Order."""
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, ConfigDict
 from typing import List, Optional
 from datetime import datetime
 
@@ -20,8 +20,7 @@ class OrderItemOut(OrderItemBase):
     id: int
     price: float
     
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class OrderBase(BaseModel):
@@ -43,6 +42,5 @@ class OrderOut(OrderBase):
     status: str
     created_at: datetime
     items: List[OrderItemOut]
-
-    class Config:
-        orm_mode = True
+    
+    model_config = ConfigDict(from_attributes=True)

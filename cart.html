@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Cart - Dough‑Re‑Me</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{ --bg:#fffaf7;--card:#ffffff;--ink:#2b2b2b;--muted:#6b7280;--brand:#f59e0b;--brand-dark:#d97706;--accent:#ef4444;--ring:rgba(245,158,11,.18) }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{margin:0;font-family:Poppins,system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,Helvetica,sans-serif;color:var(--ink);background:var(--bg)}
+    img{max-width:100%;display:block}
+    a{text-decoration:none;color:inherit}
+    .container{width:min(1100px,92vw);margin-inline:auto;padding:18px}
+    header{position:sticky;top:0;background:rgba(255,255,255,.85);backdrop-filter:saturate(180%) blur(12px);z-index:50;border-bottom:1px solid #0001}
+    .nav{display:flex;align-items:center;justify-content:space-between;padding:14px 0}
+    .brand{display:flex;gap:.6rem;align-items:center;font-weight:700;font-size:1.05rem}
+    .brand .logo{height:34px;width:34px;border-radius:10px;display:grid;place-items:center}
+    .links{display:flex;gap:1rem;align-items:center}
+    .links a{padding:.5rem .75rem;border-radius:10px;color:#374151;font-weight:600}
+    .links a:hover{background:#00000008}
+    .cart{position:relative}
+    .badge{position:absolute;top:-6px;right:-6px;background:var(--accent);color:#fff;border-radius:999px;font-size:.65rem;padding:.15rem .4rem;font-weight:700}
+
+    .grid{display:grid;grid-template-columns:2fr 1fr;gap:18px}
+    .card{background:var(--card);border-radius:16px;box-shadow:0 6px 20px #0000000d;border:1px solid #00000008;padding:16px}
+    .item{display:flex;gap:12px;align-items:center;border-bottom:1px solid #00000010;padding:10px 0}
+    .meta{color:var(--muted)}
+    .qty{display:flex;gap:8px;align-items:center;background:#f3f4f6;padding:4px;border-radius:10px}
+    .btn{padding:.6rem .9rem;border-radius:10px;border:1px solid #00000012;background:#fff;font-weight:700;cursor:pointer}
+    .btn.primary{background:var(--brand);color:#111;border-color:transparent;width:100%}
+    .btn.primary:hover{background:var(--brand-dark)}
+    .remove{background:#fff;color:#ef4444;border-color:#ef4444}
+    .summary-row{display:flex;justify-content:space-between;padding:8px 0}
+    @media (max-width:900px){ .grid{grid-template-columns:1fr} }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container nav">
+      <a href="/" class="brand">
+        <span class="logo"><img src="/static/images/logo.png" alt="Logo"></span>
+        <span>Dough‑Re‑Me Bakery</span>
+      </a>
+      <nav class="links" aria-label="Primary">
+        <a href="/">Home</a>
+        <a href="/orders.html">Orders</a>
+      </nav>
+      <a class="cart" href="/cart.html">
+        🧺<span id="cartBadge" class="badge">0</span>
+      </a>
+    </div>
+  </header>
+
+  <main class="container">
+    <h1 style="margin:10px 0">Your Cart</h1>
+    <div class="grid">
+      <section class="card">
+        <div id="cart"></div>
+      </section>
+      <aside class="card">
+        <h2 style="margin:8px 0">Summary</h2>
+        <div id="summary"></div>
+        <form id="checkoutForm" style="margin-top:10px">
+          <label>Name<input name="name" required placeholder="Enter your name"></label>
+          <label>Email<input name="email" type="email" required placeholder="your@email.com"></label>
+          <label>Phone<input name="phone" required placeholder="1234567890"></label>
+          <button type="submit" class="btn primary" id="placeOrderBtn">Place Order</button>
+        </form>
+      </aside>
+    </div>
+  </main>
+  <script>
+    const cartKey = 'drm_cart_v1';
+    
+    function showSuccessMessage(message) {
+      const msg = document.createElement('div');
+      msg.className = 'success-message';
+      msg.textContent = message;
+      document.body.appendChild(msg);
+      setTimeout(() => msg.remove(), 3000);
+    }
+    
+    function loadCart(){
+      const raw = localStorage.getItem(cartKey) || '[]';
+      return JSON.parse(raw);
+    }
+    
+    function saveCart(cart) {
+      localStorage.setItem(cartKey, JSON.stringify(cart));
+    }
+    
+    function updateQuantity(itemId, delta) {
+      const cart = loadCart();
+      const item = cart.find(i => i.id === itemId);
+      if (item) {
+        item.quantity += delta;
+        if (item.quantity <= 0) {
+          removeItem(itemId);
+        } else {
+          saveCart(cart);
+          render();
+        }
+      }
+    }
+    
+    function removeItem(itemId) {
+      const cart = loadCart();
+      const filtered = cart.filter(i => i.id !== itemId);
+      saveCart(filtered);
+      showSuccessMessage('Item removed from cart');
+      render();
+    }
+    
+    function calculateTotal() {
+      const cart = loadCart();
+      return cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    }
+    
+    function render(){
+      const cart = loadCart();
+      const cartEl = document.getElementById('cart');
+      const summaryEl = document.getElementById('summary');
+      
+      if(cart.length === 0){ 
+        cartEl.innerHTML = `<p class="meta">Your cart is empty. <a href="/" style="color:var(--brand)">Browse products</a>.</p>`;
+        summaryEl.innerHTML = '';
+        document.getElementById('checkoutForm').style.display = 'none';
+        return;
+      }
+      
+      document.getElementById('checkoutForm').style.display = 'block';
+      
+      cartEl.innerHTML = cart.map(item => `
+        <div class="item">
+          <img src="${item.img || '/static/images/shop.png'}" alt="${item.name}" style="width:64px;height:64px;border-radius:10px;object-fit:cover">
+          <div style="flex:1">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <strong>${item.name}</strong>
+              <span>₹${item.price * item.quantity}</span>
+            </div>
+            <div class="meta">${item.category || 'Dessert'} · ₹${item.price} × ${item.quantity}</div>
+          </div>
+          <div class="qty">
+            <button class="btn" onclick="updateQuantity(${item.id}, -1)">−</button>
+            <span>${item.quantity}</span>
+            <button class="btn" onclick="updateQuantity(${item.id}, 1)">+</button>
+          </div>
+          <button class="btn remove" onclick="removeItem(${item.id})">Remove</button>
+        </div>
+      `).join('');
+      
+      const subtotal = calculateTotal();
+      const tax = Math.round(subtotal * 0.05);
+      const total = subtotal + tax;
+      
+      summaryEl.innerHTML = `
+        <div class="summary-row">
+          <span>Subtotal (${cart.length} items)</span>
+          <span>₹${subtotal}</span>
+        </div>
+        <div class="summary-row">
+          <span>Tax (5%)</span>
+          <span>₹${tax}</span>
+        </div>
+        <div class="summary-row total">
+          <span>Total</span>
+          <span>₹${total}</span>
+        </div>
+      `;
+    }
+    
+    document.getElementById('checkoutForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('placeOrderBtn');
+      btn.disabled = true;
+      btn.textContent = 'Processing...';
+      
+      const form = new FormData(e.target);
+      const cart = loadCart();
+      
+      if(cart.length === 0){ 
+        showSuccessMessage('Cart is empty!');
+        btn.disabled = false;
+        btn.textContent = 'Place Order';
+        return;
+      }
+      
+      const payload = {
+        customer_name: form.get('name'),
+        customer_email: form.get('email'),
+        customer_phone: form.get('phone'),
+        items: cart.map(i => ({product_id: i.id, quantity: i.quantity}))
+      };
+      
+      try {
+        const res = await fetch('/api/v1/orders/', {
+          method: 'POST',
+          headers: {'content-type': 'application/json'},
+          body: JSON.stringify(payload)
+        });
+        
+        if(res.ok) {
+          const order = await res.json();
+          showSuccessMessage('Order placed successfully! 🎉');
+          localStorage.removeItem(cartKey);
+          setTimeout(() => {
+            window.location.href = '/orders.html?order=' + order.id;
+          }, 2000);
+        } else {
+          const txt = await res.text();
+          alert('Error placing order: ' + txt);
+          btn.disabled = false;
+          btn.textContent = 'Place Order';
+        }
+      } catch (error) {
+        alert('Network error: ' + error.message);
+        btn.disabled = false;
+        btn.textContent = 'Place Order';
+      }
+    });
+    
+    // Make functions available globally
+    window.updateQuantity = updateQuantity;
+    window.removeItem = removeItem;
+    
+    render();
+  </script>
+</body>
+</html>

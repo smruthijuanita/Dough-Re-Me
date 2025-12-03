@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Orders - Dough‑Re‑Me</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{ --bg:#fffaf7;--card:#ffffff;--ink:#2b2b2b;--muted:#6b7280;--brand:#f59e0b;--brand-dark:#d97706;--accent:#ef4444;--ring:rgba(245,158,11,.18) }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{margin:0;font-family:Poppins,system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,Helvetica,sans-serif;color:var(--ink);background:var(--bg)}
+    img{max-width:100%;display:block}
+    a{text-decoration:none;color:inherit}
+    .container{width:min(1000px,92vw);margin-inline:auto;padding:18px}
+    header{position:sticky;top:0;background:rgba(255,255,255,.85);backdrop-filter:saturate(180%) blur(12px);z-index:50;border-bottom:1px solid #0001}
+    .nav{display:flex;align-items:center;justify-content:space-between;padding:14px 0}
+    .brand{display:flex;gap:.6rem;align-items:center;font-weight:700;font-size:1.05rem}
+    .brand .logo{height:34px;width:34px;border-radius:10px;display:grid;place-items:center}
+    .links{display:flex;gap:1rem;align-items:center}
+    .links a{padding:.5rem .75rem;border-radius:10px;color:#374151;font-weight:600}
+    .links a:hover{background:#00000008}
+    .cart{position:relative}
+    .badge{position:absolute;top:-6px;right:-6px;background:var(--accent);color:#fff;border-radius:999px;font-size:.65rem;padding:.15rem .4rem;font-weight:700}
+
+    .card{background:var(--card);border-radius:16px;box-shadow:0 6px 20px #0000000d;border:1px solid #00000008;padding:16px}
+    .summary-row{display:flex;justify-content:space-between;padding:8px 0}
+    .meta{color:var(--muted)}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container nav">
+      <a href="/" class="brand">
+        <span class="logo"><img src="/static/images/logo.png" alt="Logo"></span>
+        <span>Dough‑Re‑Me Bakery</span>
+      </a>
+      <nav class="links" aria-label="Primary">
+        <a href="/">Home</a>
+        <a href="/cart.html">Cart</a>
+      </nav>
+      <a class="cart" href="/cart.html">
+        🧺<span id="cartBadge" class="badge">0</span>
+      </a>
+    </div>
+  </header>
+  <main class="container">
+    <div class="page-header">
+      <h1 style="margin:8px 0">Orders</h1>
+      <p class="meta">Enter your order ID or email to view details</p>
+    </div>
+    <section class="card">
+      <form id="lookupForm" style="display:flex;gap:10px">
+        <input id="searchInput" placeholder="Order ID or Email" style="flex:1;padding:.7rem;border:1px solid #e5e7eb;border-radius:10px" required>
+        <button type="submit" class="btn" style="padding:.7rem 1rem;border-radius:10px;background:var(--brand);color:#111;border:none;font-weight:700">Search</button>
+      </form>
+      <div id="errorMessage" style="margin-top:10px"></div>
+    </section>
+
+    <section class="card" id="orderDetails" style="margin-top:14px;display:none"></section>
+  </main>
+
+  <script>
+    const params = new URLSearchParams(location.search);
+    const orderId = params.get('order');
+    
+    if (orderId) {
+      document.getElementById('searchInput').value = orderId;
+      loadOrder(orderId);
+    }
+
+    document.getElementById('lookupForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const searchValue = document.getElementById('searchInput').value.trim();
+      if (searchValue) {
+        loadOrder(searchValue);
+      }
+    });
+
+    async function loadOrder(searchValue) {
+      const errorEl = document.getElementById('errorMessage');
+      const detailsEl = document.getElementById('orderDetails');
+      errorEl.innerHTML = '';
+      detailsEl.classList.remove('active');
+
+      try {
+        // Try to fetch order by ID first
+        let res = await fetch(`/api/v1/orders/${searchValue}`);
+        
+        if (!res.ok) {
+          // If not found, try searching by email
+          res = await fetch(`/api/v1/orders/?customer_email=${encodeURIComponent(searchValue)}`);
+        }
+
+        if (!res.ok) {
+          throw new Error('Order not found');
+        }
+
+        const data = await res.json();
+        const order = Array.isArray(data) ? data[0] : data;
+
+        if (!order) {
+          throw new Error('No orders found for this email');
+        }
+
+        renderOrder(order);
+      } catch (error) {
+        errorEl.innerHTML = `<p class="meta" style="color:#b91c1c">${error.message}. Please check your order ID or email address.</p>`;
+      }
+    }
+
+    function renderOrder(order) {
+      const detailsEl = document.getElementById('orderDetails');
+      detailsEl.style.display = 'block';
+
+      const orderDate = new Date(order.created_at).toLocaleString('en-IN');
+      const itemsHTML = order.items.map(item => `
+        <div style="display:flex;gap:12px;align-items:center;border-bottom:1px solid #00000010;padding:10px 0">
+          <img src="${item.product?.img || '/static/images/shop.png'}" alt="${item.product?.name || 'Product'}" style="width:64px;height:64px;border-radius:10px;object-fit:cover">
+          <div style="flex:1">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <strong>${item.product?.name || 'Product'}</strong>
+              <span>₹${item.price_at_time * item.quantity}</span>
+            </div>
+            <div class="meta">Qty: ${item.quantity} · ₹${item.price_at_time}</div>
+          </div>
+        </div>
+      `).join('');
+
+      const subtotal = order.items.reduce((sum, item) => sum + (item.price_at_time * item.quantity), 0);
+      const tax = Math.round(subtotal * 0.05);
+      const total = subtotal + tax;
+
+      detailsEl.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <h2 style="margin:6px 0">Order #${order.id}</h2>
+          <span class="meta">${order.status} · ${orderDate}</span>
+        </div>
+        <div class="card" style="margin-top:10px">
+          <div class="meta">Customer</div>
+          <div><strong>${order.customer_name}</strong></div>
+          <div class="meta">${order.customer_email} · ${order.customer_phone || 'N/A'}</div>
+        </div>
+        <div style="margin-top:12px" class="card">
+          <div class="meta">Items</div>
+          ${itemsHTML}
+        </div>
+        <div style="margin-top:12px" class="card">
+          <div class="summary-row"><span>Subtotal</span><span>₹${subtotal}</span></div>
+          <div class="summary-row"><span>Tax (5%)</span><span>₹${tax}</span></div>
+          <div class="summary-row" style="font-weight:800"><span>Total</span><span>₹${total}</span></div>
+        </div>
+      `;
+    }
+  </script>
+</body>
+</html>

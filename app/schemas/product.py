@@ -1,5 +1,5 @@
 """Pydantic schemas for Product."""
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional
 from datetime import datetime
 
@@ -9,8 +9,8 @@ class ProductBase(BaseModel):
     name: str = Field(..., max_length=100)
     description: Optional[str] = None
     price: float = Field(..., gt=0)
-    category: str = Field(..., max_length=50)
-    image_url: Optional[str] = None
+    category: Optional[str] = Field(None, max_length=50)
+    img: Optional[str] = None
     in_stock: bool = True
 
 
@@ -25,15 +25,12 @@ class ProductUpdate(BaseModel):
     description: Optional[str] = None
     price: Optional[float] = Field(None, gt=0)
     category: Optional[str] = Field(None, max_length=50)
-    image_url: Optional[str] = None
+    img: Optional[str] = None
     in_stock: Optional[bool] = None
 
 
 class ProductOut(ProductBase):
     """Schema for product response."""
     id: int
-    created_at: datetime
-    updated_at: Optional[datetime] = None
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
